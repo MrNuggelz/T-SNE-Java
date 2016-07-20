@@ -1,48 +1,36 @@
 package com.jujutsu.tsne;
 
-import static com.jujutsu.utils.MatrixOps.abs;
 import static com.jujutsu.utils.MatrixOps.addColumnVector;
 import static com.jujutsu.utils.MatrixOps.addRowVector;
-import static com.jujutsu.utils.MatrixOps.assignAllLessThan;
-import static com.jujutsu.utils.MatrixOps.assignAtIndex;
 import static com.jujutsu.utils.MatrixOps.assignValuesToRow;
-import static com.jujutsu.utils.MatrixOps.biggerThan;
 import static com.jujutsu.utils.MatrixOps.concatenate;
-import static com.jujutsu.utils.MatrixOps.diag;
 import static com.jujutsu.utils.MatrixOps.equal;
-import static com.jujutsu.utils.MatrixOps.exp;
 import static com.jujutsu.utils.MatrixOps.fillMatrix;
 import static com.jujutsu.utils.MatrixOps.getValuesFromRow;
-import static com.jujutsu.utils.MatrixOps.log;
-import static com.jujutsu.utils.MatrixOps.maximum;
 import static com.jujutsu.utils.MatrixOps.mean;
 import static com.jujutsu.utils.MatrixOps.negate;
-import static com.jujutsu.utils.MatrixOps.plus;
 import static com.jujutsu.utils.MatrixOps.range;
-import static com.jujutsu.utils.MatrixOps.replaceNaN;
-import static com.jujutsu.utils.MatrixOps.rnorm;
-import static com.jujutsu.utils.MatrixOps.scalarDivide;
 import static com.jujutsu.utils.MatrixOps.scalarInverse;
 import static com.jujutsu.utils.MatrixOps.scalarMult;
-import static com.jujutsu.utils.MatrixOps.scalarPlus;
 import static com.jujutsu.utils.MatrixOps.sqrt;
 import static com.jujutsu.utils.MatrixOps.square;
 import static com.jujutsu.utils.MatrixOps.sum;
-import static com.jujutsu.utils.MatrixOps.tile;
 import static com.jujutsu.utils.MatrixOps.times;
 
+import org.jblas.DoubleMatrix;
+
+import com.jujutsu.utils.BlasOps;
 import com.jujutsu.utils.MatrixOps;
 
 /**
-*
-* Author: Leif Jonsson (leif.jonsson@gmail.com)
-* 
-* This is a Java implementation of van der Maaten and Hintons t-sne 
-* dimensionality reduction technique that is particularly well suited 
-* for the visualization of high-dimensional datasets
-*
-*/
-public class SimpleTSne implements TSne {
+ *
+ * Author: Leif Jonsson (leif.jonsson@gmail.com)
+ * 
+ * This is a port of van der Maaten and Hintons Python implementation of t-sne
+ *
+ */
+public class BlasTSne implements TSne {
+	
 	MatrixOps mo = new MatrixOps();
 
 	public double [][] tsne(double[][] X, int k, int initial_dims, double perplexity) {
@@ -63,87 +51,97 @@ public class SimpleTSne implements TSne {
 			X = pca.pca(X, initial_dims);
 			System.out.println("X:Shape after PCA is = " + X.length + " x " + X[0].length);
 		}
-
-		int n = X.length;
-		double momentum = .5;
-		double initial_momentum = 0.5;
-		double final_momentum   = 0.8;
-		int eta                 = 500;
-		double min_gain         = 0.01;
-		double [][] Y           = rnorm(n,no_dims);
-		double [][] dY          = fillMatrix(n,no_dims,0.0);
-		double [][] iY          = fillMatrix(n,no_dims,0.0);
-		double [][] gains       = fillMatrix(n,no_dims,1.0);
+		int n                    = X.length;
+		double momentum          = .5;
+		double initial_momentum  = 0.5;
+		double final_momentum    = 0.8;
+		int eta                  = 500;
+		double min_gain          = 0.01;
+		DoubleMatrix Y           = DoubleMatrix.randn(n,no_dims);
+		DoubleMatrix dY          = DoubleMatrix.zeros(n,no_dims);
+		DoubleMatrix iY          = DoubleMatrix.zeros(n,no_dims);
+		DoubleMatrix gains       = DoubleMatrix.ones(n,no_dims);
 		
 		// Compute P-values
-		double [][] P = x2p(X, 1e-5, perplexity).P;
-		P = plus(P , mo.transpose(P));
-		P = scalarDivide(P,sum(P));
-		P = scalarMult(P , 4);					// early exaggeration
-		P = maximum(P, 1e-12);
+		double [][] Pt = x2p(X, 1e-5, perplexity).P;
+		DoubleMatrix P = new DoubleMatrix(Pt);
+		P = P.add(P.transpose());
+		P = P.div(P.sum());
+		P = P.mul(4);					// early exaggeration
+		P = P.max(1e-12);
 
-		System.out.println("Y:Shape is = " + Y.length + " x " + Y[0].length);
+		System.out.println("Y:Shape is = " + Y.rows + " x " + Y.columns);
 		
 		// Run iterations
 		for (int iter = 0; iter < max_iter; iter++) {
 			// Compute pairwise affinities
-			double [][] sum_Y = mo.transpose(sum(square(Y), 1));
-			double [][] num = scalarInverse(scalarPlus(addRowVector(mo.transpose(addRowVector(scalarMult(
-					times(Y, mo.transpose(Y)),
-					-2),
-					sum_Y)),
-					sum_Y),
-					1));
-			assignAtIndex(num, range(n), range(n), 0);
-			double [][] Q = scalarDivide(num , sum(num));
-
-			Q = maximum(Q, 1e-12);
+			DoubleMatrix sum_Y = BlasOps.square(Y).rowSums().transpose();
+			DoubleMatrix num = BlasOps.scalarInverse(Y.mmul(Y.transpose()).mul(-2).addRowVector(sum_Y).transpose().addRowVector(sum_Y).add(1));
+			BlasOps.assignAtIndex(num, range(n), range(n), 0);
+			
+			DoubleMatrix Q = num.div(num.sum());
+			Q = Q.max(1e-12);
 
 			// Compute gradient
-			double[][] L = mo.scalarMultiply(mo.minus(P , Q), num);
-		    dY = scalarMult(times(mo.minus(diag(sum(L, 1)),L) , Y), 4);
+			DoubleMatrix L = P.sub(Q).mul(num);
 			
-			// Perform the update
+		    dY = DoubleMatrix.diag(L.rowSums()).sub(L).mmul(Y).mul(4);
+
+		    // Perform the update
 			if (iter < 20)
 				momentum = initial_momentum;
 			else
 				momentum = final_momentum;
-			gains = plus(mo.scalarMultiply(scalarPlus(gains,.2), abs(negate(equal(biggerThan(dY,0.0),biggerThan(iY,0.0))))),
-					mo.scalarMultiply(scalarMult(gains,.8), abs(equal(biggerThan(dY,0.0),biggerThan(iY,0.0)))));
+			
+			DoubleMatrix gainsSmall = new DoubleMatrix();
+			gainsSmall.copy(gains);
+			DoubleMatrix gainsBig = new DoubleMatrix();
+			gainsBig.copy(gains);
+			
+			gainsSmall = gainsSmall.add(0.2);
+			
+			gainsBig = gainsBig.mul(0.8);
+			
+			DoubleMatrix btNeg = BlasOps.abs(negate(equal(BlasOps.biggerThan(dY,0.0),BlasOps.biggerThan(iY,0.0))));
+			gainsSmall = gainsSmall.mul(btNeg);
+			DoubleMatrix bt    = BlasOps.abs(       equal(BlasOps.biggerThan(dY,0.0),BlasOps.biggerThan(iY,0.0)));
+			gainsBig = gainsBig.mul(bt);
+			
+			gains = gainsSmall.add(gainsBig);
 
-			assignAllLessThan(gains, min_gain, min_gain);
-			iY = mo.minus(scalarMult(iY,momentum) , scalarMult(mo.scalarMultiply(gains , dY),eta));
-			Y = plus(Y , iY);
-			//double [][] tile = tile(mean(Y, 0), n, 1);
-			Y = mo.minus(Y , tile(mean(Y, 0), n, 1));
+			BlasOps.assignAllLessThan(gains, min_gain, min_gain);
+			iY = iY.mul(momentum).sub(gains.mul(dY).mul(eta));
+			Y = Y.add(iY);
+			Y = Y.sub(BlasOps.tile(Y.columnMeans(), n, 1));
 
 			// Compute current value of cost function
-			if ((iter % 100 == 0))   {
-				double [][] logdivide = log(scalarDivide(P , Q));
-				logdivide = replaceNaN(logdivide,0);
-				double C = sum(mo.scalarMultiply(P , logdivide));
-				System.out.println("Iteration " + (iter + 1) + ": error is " + C);
-			} else if((iter + 1) % 10 == 0) {
-				System.out.println("Iteration " + (iter + 1));
+			if (iter % 100 == 0)   {
+				DoubleMatrix logdivide = BlasOps.log(P.div(Q));
+				logdivide = BlasOps.replaceNaN(logdivide,0);
+				double C = P.mul(logdivide).sum();
+				System.out.println("Iteration " + iter + ": error is " + C);
+			} else if(iter % 10 == 0) {
+				System.out.println("Iteration " + iter);
 			}
 
 			// Stop lying about P-values
 			if (iter == 100)
-				P = scalarDivide(P , 4);
+				P = P.div(4);
 		}
 
 		// Return solution
-		return Y;
+		return Y.toArray2();
 	}
 
 	public R Hbeta (double [][] D, double beta){
-		double [][] P = exp(scalarMult(scalarMult(D,beta),-1));
-		double sumP = sum(P);   // sumP confirmed scalar
-		double H = Math.log(sumP) + beta * sum(mo.scalarMultiply(D,P)) / sumP;
-		P = scalarDivide(P,sumP);
+		DoubleMatrix Dd = new DoubleMatrix(D);
+		DoubleMatrix P = BlasOps.exp(Dd.mul(-beta));
+		double sumP = P.sum();   // sumP confirmed scalar
+		double H = Math.log(sumP) + beta * Dd.mul(P).sum() / sumP;
+		P = P.div(sumP);
 		R r = new R();
 		r.H = H;
-		r.P = P;
+		r.P = P.toArray2();
 		return r;
 	}
 

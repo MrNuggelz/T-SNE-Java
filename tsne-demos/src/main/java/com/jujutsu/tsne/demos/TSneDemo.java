@@ -17,10 +17,10 @@ import org.math.plot.plots.IconScatterPlot;
 import org.math.plot.plots.ScatterPlot;
 
 import com.jujutsu.tsne.FastTSne;
-import com.jujutsu.tsne.MatrixOps;
 import com.jujutsu.tsne.PrincipalComponentAnalysis;
 import com.jujutsu.tsne.SimpleTSne;
 import com.jujutsu.tsne.TSne;
+import com.jujutsu.utils.MatrixOps;
 import com.jujutsu.utils.MatrixUtils;
 
 public class TSneDemo {
@@ -278,9 +278,9 @@ public class TSneDemo {
         	System.out.println("usage: For the data format TSneDemo accepts, look at the file 'src/main/resources/datasets/mnist2500_X.txt' file and accompaning label file 'src/main/resources/datasets/mnist2500_labels.txt'.");
         	System.out.println("       The label file must have as meny rows as the input matrix");
         	System.out.println("usage: Example using the data and label file in: tsne-demos/src/main/resources/datasets/");
-        	System.out.println("usage: java -cp target/tsne-demos-X.X.X.jar com.jujutsu.tsne.demos.TSneDemo minst2500_X.txt mnist2500_labels.txt");
+        	System.out.println("usage: java -cp target/tsne-demos-X.X.X.jar com.jujutsu.tsne.demos.TSneDemo src/main/resources/datasets/mnist2500_X.txt src/main/resources/datasets/mnist2500_labels.txt");
         	System.out.println("usage: Example using only data file in: tsne-demos/src/main/resources/datasets/");
-        	System.out.println("usage: java -cp target/tsne-demos-X.X.X.jar com.jujutsu.tsne.demos.TSneDemo minst2500_X.txt");
+        	System.out.println("usage: java -cp target/tsne-demos-X.X.X.jar com.jujutsu.tsne.demos.TSneDemo src/main/resources/datasets/mnist2500_X.txt");
         	System.exit(0);
         }
         //pca_iris();

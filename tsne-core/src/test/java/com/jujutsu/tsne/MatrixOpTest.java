@@ -6,21 +6,21 @@ import java.io.File;
 
 import org.junit.Test;
 
+import com.jujutsu.utils.MatrixOps;
 import com.jujutsu.utils.MatrixUtils;
 
 public class MatrixOpTest {
 	
 	@Test
 	public void testPCA() {
-		MatrixOps mo = new MatrixOps();
-        double [][] nmatrix = MatrixUtils.simpleRead2DMatrix(new File("src/test/resources/datasets/nist_pca_2.txt"), " ");
+        //double [][] nmatrix = MatrixUtils.simpleRead2DMatrix(new File("src/test/resources/datasets/nist_pca_2.txt"), " ");
        // System.out.println(ArrayString.printDoubleArray(X));
         //double [][] nmatrix = TSneDemo.nistReadStringDouble(ASCIIFile.read(new File("src/main/resources/datasets/mnist2500_X.txt")));
-        double [][] matrix = mo.rnorm(200,7);
-        //System.out.println(ArrayString.printDoubleArray(matrix));
+        double [][] matrix = MatrixOps.rnorm(200,7);
+        System.out.println(MatrixOps.doubleArrayToPrintString(matrix));
         PrincipalComponentAnalysis pca = new PrincipalComponentAnalysis();
         double [][] pcad = pca.pca(matrix, 2);
-        //System.out.println(ArrayString.printDoubleArray(pcad));
+        System.out.println(MatrixOps.doubleArrayToPrintString(pcad));
 	}
 	
 	@Test
@@ -42,7 +42,7 @@ public class MatrixOpTest {
 		long time = 0;
 		for (int laps = 0; laps < noLaps; laps++) {
 			time = System.currentTimeMillis();
-			double [][] tr1 = mo.naivetranspose(matrix);
+			double [][] tr1 = MatrixOps.transposeSerial(matrix);
 			trtime += (System.currentTimeMillis()-time);
 			assertEquals(tr1.length,cols);
 			assertEquals(tr1[0].length,rows);
@@ -75,7 +75,7 @@ public class MatrixOpTest {
 				trmatrix[j][i] = matrix[i][j];
 			}
 		}
-		int noLaps = 500;
+		int noLaps = 300;
 		long trtime = 0;
 		long partrtime = 0;
 		long time = 0;
@@ -83,7 +83,7 @@ public class MatrixOpTest {
 		for (int laps = 0; laps < noLaps; laps++) {
 			if((laps%100)==0) System.out.println("Iter " + laps + "...");
 			time = System.currentTimeMillis();
-			double [][] tr1 = mo.naivetranspose(matrix);
+			double [][] tr1 = MatrixOps.transposeSerial(matrix);
 			trtime += (System.currentTimeMillis()-time);
 			assertEquals(tr1.length,cols);
 			assertEquals(tr1[0].length,rows);
@@ -110,7 +110,7 @@ public class MatrixOpTest {
 		double [][] matrix2 = MatrixUtils.simpleRead2DMatrix(new File("src/test/resources/datasets/mnist2500_X.txt"), " ");
 		int rows = matrix1.length;
 		int cols = matrix1[0].length;
-		int noLaps = 1000;
+		int noLaps = 300;
 		long trtime = 0;
 		long partrtime = 0;
 		long time = 0;
