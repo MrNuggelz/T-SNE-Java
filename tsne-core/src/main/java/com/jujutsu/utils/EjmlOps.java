@@ -1,9 +1,9 @@
 package com.jujutsu.utils;
 
+import org.ejml.data.DenseMatrix64F;
+
 import static org.ejml.ops.CommonOps.divide;
 import static org.ejml.ops.CommonOps.sumCols;
-
-import org.ejml.data.DenseMatrix64F;
 
 public class EjmlOps {
 
@@ -16,6 +16,26 @@ public class EjmlOps {
 				if(val<minval) p.unsafe_set(j, j, minval);
 			}
 		}
+	}
+
+	public static DenseMatrix64F repmat(DenseMatrix64F a, int row, int col){
+		double[] data_a = a.getData();
+		int numElements = a.getNumElements();
+		double[] data_out = new double[numElements*row*col];
+		if (row == 1) {
+			for (int i = 0; i < col; i++) {
+				System.arraycopy(data_a, 0, data_out, i*numElements, numElements);
+			}
+		}
+		for (int i = 0; i < a.getNumRows(); i++){
+			for (int j = 0; j < col; j++){
+				System.arraycopy(data_a, i*a.getNumCols(), data_out, j*a.getNumCols()+i*col*a.getNumCols(), a.getNumCols());
+			}
+		}
+		for (int i = 1; i < row; i++){
+			System.arraycopy(data_out, 0, data_out, i*numElements*col, numElements*col);
+		}
+		return new DenseMatrix64F(a.numRows * row, a.numCols * col, true, data_out);
 	}
 
 	/**
