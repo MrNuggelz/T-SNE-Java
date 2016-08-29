@@ -33,8 +33,9 @@ public class KernelTSne {
         }
     }
 
-    public void kmapTrain(double[][] x, String filepath) {
-        DenseMatrix64F y = new DenseMatrix64F(this.tsne.tsne(x, 2, 5, 20.0));
+    public double[][] kmapTrain(double[][] x, String filepath) {
+        double[][] out = this.tsne.tsne(x, 2, 5, 20.0);
+        DenseMatrix64F y = new DenseMatrix64F(out);
         DenseMatrix64F x_dist = new DenseMatrix64F(x);
 
         int k_nb = 2;      //number of neighbours
@@ -70,6 +71,7 @@ public class KernelTSne {
                 e.printStackTrace();
             }
         }
+        return out;
     }
 
     public void kmapTest(double[][] x){
