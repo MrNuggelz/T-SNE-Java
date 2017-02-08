@@ -28,22 +28,7 @@ import static com.jujutsu.utils.MatrixOps.sqrt;
 import static com.jujutsu.utils.MatrixOps.square;
 import static com.jujutsu.utils.MatrixOps.sum;
 import static com.jujutsu.utils.MatrixOps.times;
-import static org.ejml.ops.CommonOps.add;
-import static org.ejml.ops.CommonOps.addEquals;
-import static org.ejml.ops.CommonOps.divide;
-import static org.ejml.ops.CommonOps.elementDiv;
-import static org.ejml.ops.CommonOps.elementExp;
-import static org.ejml.ops.CommonOps.elementLog;
-import static org.ejml.ops.CommonOps.elementMult;
-import static org.ejml.ops.CommonOps.elementPower;
-import static org.ejml.ops.CommonOps.elementSum;
-import static org.ejml.ops.CommonOps.mult;
-import static org.ejml.ops.CommonOps.multAddTransB;
-import static org.ejml.ops.CommonOps.scale;
-import static org.ejml.ops.CommonOps.subtract;
-import static org.ejml.ops.CommonOps.subtractEquals;
-import static org.ejml.ops.CommonOps.sumRows;
-import static org.ejml.ops.CommonOps.transpose;
+import static org.ejml.ops.CommonOps.*;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
@@ -230,7 +215,9 @@ public class FastTSne implements TSne {
 	}
 	
 	public R Hbeta (double [][] D, double beta){
-    	DenseMatrix64F P  = new DenseMatrix64F(D);
+    	DenseMatrix64F matrixD  = new DenseMatrix64F(D);
+		DenseMatrix64F P = new DenseMatrix64F(matrixD.numRows, matrixD.numCols);
+		subtract(matrixD,elementMin(matrixD),P);
     	scale(-beta,P);
     	elementExp(P,P);
 		double sumP = elementSum(P);   // sumP confirmed scalar
