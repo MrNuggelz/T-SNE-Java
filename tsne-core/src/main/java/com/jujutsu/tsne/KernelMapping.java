@@ -113,4 +113,8 @@ public class KernelMapping {
         return sig_nb;
     }
 
+    public int getDimension(){
+        return this.A.getNumCols();
+    }
+
 }
