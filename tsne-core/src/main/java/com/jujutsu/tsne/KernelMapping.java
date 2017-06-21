@@ -34,6 +34,18 @@ public class KernelMapping {
         }
     }
 
+    public void saveKernel(String filepath) {
+        try {
+            FileOutputStream f = new FileOutputStream(filepath);
+            ObjectOutput s = new ObjectOutputStream(f);
+            s.writeObject(this.A);
+            s.writeObject(this.sig_nb);
+            s.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void kmapTrain(double[][] x_dist, double[][] y, double sign, String filepath) {
         kmapTrain(new DenseMatrix64F(x_dist), new DenseMatrix64F(y), sign, filepath);
     }
@@ -63,17 +75,8 @@ public class KernelMapping {
         elementDiv(kernel, sum);
         pinv(kernel, inv_kernel);
         mult(inv_kernel, y, a);
-        try {
-            this.A = a;
-            this.sig_nb = sig_nb;
-            FileOutputStream f = new FileOutputStream(filepath);
-            ObjectOutput s = new ObjectOutputStream(f);
-            s.writeObject(a);
-            s.writeObject(sig_nb);
-            s.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        this.A = a;
+        this.sig_nb = sig_nb;
     }
 
     public DenseMatrix64F kmap(double[][] x_dist_ose) {
@@ -118,6 +121,14 @@ public class KernelMapping {
             sig_nb.set(0, i, sorted[j - 1] * sorted[j - 1]);
         }
 
+        return sig_nb;
+    }
+
+    public DenseMatrix64F getA() {
+        return A;
+    }
+
+    public DenseMatrix64F getSig_nb() {
         return sig_nb;
     }
 
