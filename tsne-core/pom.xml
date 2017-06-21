@@ -8,7 +8,7 @@
 	<!-- 2.1.0: Added support for configurable theta -->
 	<!-- 2.2.0: Substantial improvements in parallelization -->
 	<!-- 2.3.0: Substantial improvements in parallelization. Added parallelization of vp tree search-->
-	<version>2.4.0</version>
+	<version>2.4.2</version>
 	<name>Java T-SNE</name>
 	
 	<properties>

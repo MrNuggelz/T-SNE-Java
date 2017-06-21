@@ -15,6 +15,14 @@ import static org.ejml.ops.MatrixFeatures.hasNaN;
 public class KernelMapping {
     private DenseMatrix64F A, sig_nb;
 
+    public KernelMapping(DenseMatrix64F a, DenseMatrix64F sig_nb) {
+        A = a;
+        this.sig_nb = sig_nb;
+    }
+
+    public KernelMapping() {
+    }
+
     public void loadKernel(String filepath) {
         try {
             FileInputStream in = new FileInputStream(filepath);
